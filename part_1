@@ -6,17 +6,16 @@
 #include "util/delay.h"
 
 ISR(TIMER1_CAPT_vect) {
-	TCCR1B ^= 0x40;
-	PORTB ^= 0x20;
-	putchar('s');
+	TCCR1B ^= 0x40; // Toggle the input capture flag at the ICF1 bit in TIFR1
+	PORTB ^= 0x20;	// Toggle the on-off state of the LED at PB5
 }
 
 int main (void)
 {
 	uart_init();
-	DDRB = 0x20;	//enable pin 13 write
-	TCCR1B = 0x01;	//setting the clock on
-	TIMSK1 = 0x20;	//allow interrupts
-	sei();
-	while(1);
+	DDRB = 0x20;	// Allow PB5 (PIN 13) to be an output pin on the Arduino
+	TCCR1B = 0x01;	// Select a clock with no prescaling
+	TIMSK1 = 0x20;	// Enable input capture interrupt
+	sei();		// Allow interrupts globally
+	while(1);	// Run program forever
 }
