@@ -1,0 +1,59 @@
+#include <asf.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "uart.h"
+#include "util/delay.h"
+
+
+volatile unsigned int edge1, edge2, diff, space_counter;
+
+
+ISR(TIMER1_CAPT_vect) {
+	//count time, store in variable
+	//casework on time
+	if (!(PINB & 0x01)) {
+		//putchar('f');		//for debugging
+		edge1 = ICR1;		//store time of first (falling) edge
+		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
+		space_counter = ICR1 - space_counter;
+		if (space_counter > 25000) {
+			//space
+			putchar(' ');
+		}
+	} 
+	if (PINB & 0x01) {
+		//putchar('r');		//for debugging
+		edge2 = ICR1;		//store time of second (rising) edge
+		diff = edge2-edge1;	//for morse logic
+		if (diff < 1875) {
+		} else if (diff < 12500) {
+			//dot
+			putchar('.');
+			PORTB = 0x10;
+			_delay_ms(50);
+			PORTB &= ~(0x10);
+		} else {
+			//dash
+			putchar('-');
+			PORTB = 0x08;
+			_delay_ms(50);
+			PORTB &= ~(0x08);
+		}
+		space_counter = ICR1;
+		TCCR1B &= ~(0x40);		//flips ICES1 bit, next capture on falling bit
+	}
+}
+
+
+int main (void)
+{
+	TIMSK1 = 0x20;		//enable interrupt on input capture
+	DDRB = 0x18;		//write enable pin 13
+	uart_init();
+	TCCR1B = 0x04;		//timer 1, prescaler of 256
+						//input capture on falling edge
+	TIFR1 |= 0x20;		//clear input capture flag
+	sei();				//enable interrupts
+	while(1);
+}
