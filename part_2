@@ -1,0 +1,44 @@
+#include <asf.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "uart.h"
+#include "util/delay.h"
+
+volatile unsigned int edge1, edge2, diff, space_counter;
+
+ISR(TIMER1_CAPT_vect) {
+	if (ICES1 == 0) {
+		edge1 = ICR1;		//store time of first (falling) edge
+		TCCR1B ^= 0x40;		//flips ICES1 bit, next capture on rising bit
+		space_counter = ICR1 - space_counter;
+		if (space_counter > 25000) {
+			putchar(' ');
+		}
+	} else {
+		edge2 = ICR1;		//store time of second (rising) edge
+		TCCR1B ^= 0x40;		//flips ICES1 bit, next capture on falling bit
+		diff = edge2-edge1;
+		if (diff < 1875) {
+		} else if (diff < 12500) {
+			//dot
+			putchar('.');
+		} else {
+			//dash
+			putchar('-');
+		}
+		space_counter = ICR1;
+	}
+	TIFR1 |= 0x20;			//clear input capture flag
+}
+
+
+int main (void)
+{
+	TIMSK1 = 0x20;		//enable interrupt on input capture
+	//DDRB = 0x20;		//write enable pin 13
+	sei();				//enable interrupts
+	uart_init();
+	TCCR1B = 0x04;		//timer 1, prescaler of 256
+	TCCR1B |= 0x00;		//input capture on falling edge
+}
