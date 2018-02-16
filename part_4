@@ -113,7 +113,7 @@ char decode() {
 					} else if (buffer[4] == '-') {
 						return ('4');
 					} else {
-						return('h');
+						return('H');
 					}
 				} else if (buffer[3] == '-') {
 					if (buffer[4] == '.') {
@@ -121,10 +121,10 @@ char decode() {
 					} else if (buffer[4] == '-') {
 						return('3');
 					} else {
-						return('v');
+						return('V');
 					}
 				} else {
-					return('s');
+					return('S');
 				}
 			} else if (buffer[2] == '-') {
 				//u tree
@@ -133,7 +133,7 @@ char decode() {
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('f');
+						return('F');
 					}
 				} else if (buffer[3] == '-') {
 					if (buffer[4] == '.') {
@@ -146,10 +146,10 @@ char decode() {
 						//do nothing b/c (..--) is not a valid char sequence
 					}
 				} else {
-					return('u');
+					return('U');
 				}
 			} else {
-				return('i');
+				return('I');
 			}
 		} else if (buffer[1] == '-') {
 			//a tree
@@ -160,12 +160,12 @@ char decode() {
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('l');
+						return('L');
 					}
 				} else if (buffer[3] == '-') {
 					//do nothing b/c (.-.-) is not a valid char sequence
 				} else {
-					return('r');
+					return('R');
 				}
 			} else if (buffer[2] == '-') {
 				//w tree
@@ -174,7 +174,7 @@ char decode() {
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('p');
+						return('P');
 					}
 				} else if (buffer[3] == '-') {
 					//j tree
@@ -183,16 +183,16 @@ char decode() {
 					} else if (buffer[4] == '-') {
 						return('1');
 					} else {
-						return('j');
+						return('J');
 					}
 				} else {
-					return('w');
+					return('W');
 				}
 			} else {
-				return('a');
+				return('A');
 			}
 		} else {
-			return('e');
+			return('E');
 		}
 	else if (buffer[0] == '-') {
 		//t tree
@@ -207,17 +207,17 @@ char decode() {
 					} else if (buffer[4] == '-') {
 						//do nothing b/c (-...-) is not a valid char sequence
 					} else {
-						return('b');
+						return('B');
 					}
 				} else if (buffer[3] == '-') {
 					//x tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('x');
+						return('X');
 					}
 				} else {
-					return('d');
+					return('D');
 				}
 			} else if (buffer[2] == '-') {
 				//k tree
@@ -226,20 +226,20 @@ char decode() {
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('c');
+						return('C');
 					}
 				} else if (buffer[3] == '-') {
 					//y tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('y');
+						return('Y');
 					}
 				} else {
-					return('k');
+					return('K');
 				}
 			} else {
-				return('n');
+				return('N');
 			}
 		} else if (buffer[1] == '-') {
 			//m tree
@@ -252,24 +252,24 @@ char decode() {
 					} else if (buffer[4] == '-') {
 						//do nothing b/c (--..-) is not a valid char sequence
 					} else {
-						return('z');
+						return('Z');
 					}
 				} else if (buffer[3] == '-') {
 					//q tree 
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
 						//do nothing
 					} else {
-						return('q');
+						return('Q');
 					}
 				} else {
-					return('g');
+					return('G');
 				}
 			} else if (buffer[2] == '-') {
 				//o tree
 				if (buffer[3] == '.') {
 					//8 tree
 					if (buffer[4] == '.') {
-						
+						return('8');
 					} else if (buffer[4] == '-') {
 						//do nothing b/c (---.-) is not a valid char sequence
 					} else {
@@ -278,14 +278,21 @@ char decode() {
 				}
 				else if (buffer[3] == '-') {
 					//9,0 tree
+					if (buffer[4] == '.') {
+						return('9');
+					} else if (buffer[4] == '-') {
+						return('0');
+					} else {
+						//do nothing b/c (----) is not a valid char sequence
+					}
 				} else {
-					return('o');
+					return('O');
 				}
 			} else {
-				return('m');
+				return('M');
 			}
 		} else {
-			return('t');
+			return('T');
 		}
 }
 
@@ -301,6 +308,13 @@ int main (void)
 	sei();				//enable interrupts
 	while(1);
 }
+
+
+
+
+
+
+
 
 
 
