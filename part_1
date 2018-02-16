@@ -1,0 +1,20 @@
+#include <asf.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "uart.h"
+#include "util/delay.h"
+
+ISR(TIMER1_CAPT_vect) {
+	TCCR1B ^= 0x40;
+	PORTB ^= 0x20;
+}
+
+
+int main (void)
+{
+	DDRB = 0x20;
+	TCCR1B = 0x01;	
+	TIMSK1 = 0x20;
+	sei();
+}
