@@ -1,0 +1,175 @@
+/**
+ * \file
+ *
+ * \brief Empty user application template
+ *
+ */
+
+/**
+ * \mainpage User Application template doxygen documentation
+ *
+ * \par Empty user application template
+ *
+ * Bare minimum empty user application template
+ *
+ * \par Content
+ *
+ * -# Include the ASF header files (through asf.h)
+ * -# "Insert system clock initialization code here" comment
+ * -# Minimal main function that starts with a call to board_init()
+ * -# "Insert application code here" comment
+ *
+ */
+
+/*
+ * Include header files for all drivers that have been imported from
+ * Atmel Software Framework (ASF).
+ */
+/*
+ * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
+ */
+#include <asf.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "uart.h"
+#include "util/delay.h"
+
+/*volatile int timer = 0; // timer in ms */
+
+volatile unsigned int edge1, edge2, diff, space_counter;
+volatile char buffer[5];
+volatile unsigned int b_index = 0;
+/*
+ISR(TIMER1_CAPT_vect) {
+	TCCR1B ^= 0x40;
+	PORTB ^= 0x20;
+	putchar('s');
+}
+
+
+int main (void)
+{
+	uart_init();
+	DDRB = 0x20;	//enable pin 13 write
+	TCCR1B = 0x01;	//setting the clock on
+	TIMSK1 = 0x20;	//allow interrupts
+	sei();
+	while(1);
+}*/
+
+
+ISR(TIMER1_CAPT_vect) {
+	//count time, store in variable
+	//casework on time
+	if (!(PINB & 0x01)) {
+		//putchar('f');		//for debugging
+		edge1 = ICR1;		//store time of first (falling) edge
+		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
+		space_counter = ICR1 - space_counter;
+		if (space_counter > 25000) {
+			//space
+			putchar(' ');
+		}
+	} 
+	if (PINB & 0x01) {
+		//putchar('r');		//for debugging
+		edge2 = ICR1;		//store time of second (rising) edge
+		diff = edge2-edge1;	//for morse logic
+		if (diff < 1875) {
+		} else if (diff < 12500) {
+			//dot
+			putchar('.');
+			buffer[b_index] = '.';
+			b_index++;
+			PORTB = 0x10;
+			_delay_ms(50);
+			PORTB &= ~(0x10);
+		} else {
+			//dash
+			putchar('-');
+			buffer[b_index] = '-';
+			b_index++;
+			PORTB = 0x08;
+			_delay_ms(50);
+			PORTB &= ~(0x08);
+		}
+		space_counter = ICR1;
+		TCCR1B &= ~(0x40);		//flips ICES1 bit, next capture on falling bit
+	}
+}
+
+char decode () {
+	if (buffer[0] == '.') {
+		//e tree
+		if (buffer[1] == '.') {
+			//i tree
+			if (buffer[2] == '.') {
+				//s tree
+				if (buffer[3] == '.') {
+					//h tree
+					if (buffer[4] == '.') {
+						return ('5');
+					} else if (buffer[4] == '-') {
+						return ('4');
+					} else {
+						return('h');
+					}
+				} else if (buffer[3] == '-') {
+					if (buffer[4] == '.') {
+					} else if (buffer[4] == '-') {
+						return('3');
+					} else {
+						return('v');
+					}
+				} else {
+					return('s');
+				}
+			} else if (buffer[2] == '-') {
+				//u tree
+				if (buffer[3] == '.') {
+					//f tree
+					if ((buffer[4] == '.') || (buffer[4] == '-')) {
+					} else {
+						return('f');
+					}
+				} else if (buffer[3])
+			}
+		} else if (buffer[1] == '-') {
+			if (buffer[1] == '.') {
+				} else if (buffer[1] == '-') {
+					
+				}
+		}
+	} else if (buffer[0] == '-') {
+		//t
+	}
+}
+
+
+int main (void)
+{
+	TIMSK1 = 0x20;		//enable interrupt on input capture
+	DDRB = 0x18;		//write enable pin 13
+	uart_init();
+	TCCR1B = 0x04;		//timer 1, prescaler of 256
+						//input capture on falling edge
+	TIFR1 |= 0x20;		//clear input capture flag
+	sei();				//enable interrupts
+	while(1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
