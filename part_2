@@ -8,17 +8,22 @@
 volatile unsigned int edge1, edge2, diff, space_counter;
 
 ISR(TIMER1_CAPT_vect) {
-	if (ICES1 == 0) {
+	//count time, store in variable
+	//casework on time
+	if (!(PINB & 0x01)) {
+		//putchar('f');		//for debugging
 		edge1 = ICR1;		//store time of first (falling) edge
-		TCCR1B ^= 0x40;		//flips ICES1 bit, next capture on rising bit
+		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
 		space_counter = ICR1 - space_counter;
 		if (space_counter > 25000) {
+			//space
 			putchar(' ');
 		}
-	} else {
+	} 
+	if (PINB & 0x01) {
+		//putchar('r');		//for debugging
 		edge2 = ICR1;		//store time of second (rising) edge
-		TCCR1B ^= 0x40;		//flips ICES1 bit, next capture on falling bit
-		diff = edge2-edge1;
+		diff = edge2-edge1;	//for morse logic
 		if (diff < 1875) {
 		} else if (diff < 12500) {
 			//dot
@@ -28,17 +33,19 @@ ISR(TIMER1_CAPT_vect) {
 			putchar('-');
 		}
 		space_counter = ICR1;
+		TCCR1B &= ~(0x40);		//flips ICES1 bit, next capture on falling bit
 	}
-	TIFR1 |= 0x20;			//clear input capture flag
 }
 
 
 int main (void)
 {
 	TIMSK1 = 0x20;		//enable interrupt on input capture
-	//DDRB = 0x20;		//write enable pin 13
-	sei();				//enable interrupts
+	DDRB = 0x20;		//write enable pin 13
 	uart_init();
 	TCCR1B = 0x04;		//timer 1, prescaler of 256
-	TCCR1B |= 0x00;		//input capture on falling edge
+						//input capture on falling edge
+	TIFR1 |= 0x20;		//clear input capture flag
+	sei();				//enable interrupts
+	while(1);
 }
