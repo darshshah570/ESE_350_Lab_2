@@ -8,13 +8,15 @@
 ISR(TIMER1_CAPT_vect) {
 	TCCR1B ^= 0x40;
 	PORTB ^= 0x20;
+	putchar('s');
 }
-
 
 int main (void)
 {
-	DDRB = 0x20;
-	TCCR1B = 0x01;	
-	TIMSK1 = 0x20;
+	uart_init();
+	DDRB = 0x20;	//enable pin 13 write
+	TCCR1B = 0x01;	//setting the clock on
+	TIMSK1 = 0x20;	//allow interrupts
 	sei();
+	while(1);
 }
