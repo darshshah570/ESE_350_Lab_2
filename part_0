@@ -3,15 +3,15 @@
 #include <avr/io.h>
 #include "uart.h"
 #include "util/delay.h"
-// POLLING for PART 0
+
 int main (void)
 {
-	board_init();
-	PORTB = 0x20;
-	DDRB = 0x20;
+	board_init(); // Initialize the board
+	DDRB = 0x20;  // Allow PB5 (PIN 13) to be an output pin on the Arduino
 	while(1) {
-		while (!(PINB & 0x01));
-		PORTB = 0x00;
-		while ((PINB & 0x01));
-		PORTB = 0x20;
+		while !(PINB & 0x01); 	// Read from port PB0 to see if button is pressed
+		PORTB = 0x20; 		// Write to PB5 (PIN 13) to turn on the LED
+		while (PINB & 0x01);	// Read from port PB0 to see if button is released
+		PORTB = 0x00; 		// Write to PB5 (PIN 13) to turn off the LED
+	}
 }
