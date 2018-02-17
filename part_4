@@ -5,21 +5,21 @@
 #include "uart.h"
 #include "util/delay.h"
 
-volatile unsigned int edge1, edge2, diff, space_counter;
 volatile char buffer[5];
 volatile unsigned int b_index = 0;
+volatile unsigned int edge1, edge2, diff, space_counter;
 
 char decode(void);
 void clearBuffer(void);
 
 ISR(TIMER1_CAPT_vect) {
-	//count time, store in variable
-	//casework on time
+	// Count time, store in variable
+	// Casework on time
 	if (!(PINB & 0x01)) {
-		edge1 = ICR1;		//store time of first (falling) edge
-		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
+		edge1 = ICR1;		// Store time of first (falling) edge
+		TCCR1B |= 0x40;		// Flip ICES1 bit, next capture on rising edge
 		space_counter = ICR1 - space_counter;
-		if (space_counter > 25000) {	// 400 ms
+		if (space_counter > 25000) {	// > 400 ms
 			//space
 			putchar(' ');
 			putchar(decode());
@@ -27,50 +27,51 @@ ISR(TIMER1_CAPT_vect) {
 		}
 	} 
 	if (PINB & 0x01) {
-		edge2 = ICR1;		//store time of second (rising) edge
-		diff = edge2-edge1;	//for morse logic
-		if (diff < 1875) {	//ignore a rising edge that is less than 30 ms after a falling edge to for de-bouncing
-		} else if (diff < 12500) { //between 30 and 200 ms is a dot
-			//dot
-			buffer[b_index] = '.';		// case of index > 4
-			b_index++;					
-			if (b_index > 4) {
+		edge2 = ICR1;		// Store time of second (rising) edge
+		diff = edge2 - edge1;	// For morse logic
+		if (diff < 1875) {	// Ignore a rising edge <30 ms after a falling edge to prevent de-bouncing effects
+		} else if (diff < 12500) { // Between 30 and 200 ms is a dot
+			// Dot 
+			buffer[b_index] = '.';		
+			b_index++;				// Increment buffer index
+			if (b_index > 4) {			// Case of overflowed buffer
 				putchar(decode());
 				clearBuffer();
 			}
-			PORTB = 0x10;				//turn on pin 12 LED
-			_delay_ms(50);
-			PORTB &= ~(0x10);			//turn off
-		} else {	//if pressed for more than 200 ms it is a dash
-			//dash
+			PORTB = 0x10;				// Turn on PIN 12 LED
+			_delay_ms(50);				// Allow delay to see flash
+			PORTB &= ~(0x10);			// Turn off LED
+		} else {	// Pressed for >200 ms is a dash
+			// Dash
 			buffer[b_index] = '-';
-			b_index++;					// increment index
+			b_index++;				// Increment buffer index
 			if (b_index > 4) {
 				putchar(decode());		
 				clearBuffer();
 			}
-			PORTB = 0x08;				//turn on pin 11 LED
-			_delay_ms(50);
-			PORTB &= ~(0x08);			//turn off
+			PORTB = 0x08;				// Turn on Pin 11 LED
+			_delay_ms(50);				// Allow delay to see flash
+			PORTB &= ~(0x08);			// Turn off LED
 		}
 		space_counter = ICR1;
-		TCCR1B &= ~(0x40);		//sets ICES1 bit to 0, next capture on falling bit
+		TCCR1B &= ~(0x40);		// Set ICES1 bit to 0, next capture on falling edge
 	}
 }
 
 int main (void)
 {
-	TIMSK1 = 0x20;		//enable interrupt on input capture
-	DDRB = 0x18;		//write enable pin 13
-	uart_init();
-	TCCR1B = 0x04;		//timer 1, prescaler of 256
-				//input capture on falling edge
-	TIFR1 |= 0x20;		//clear input capture flag
-	sei();			//enable interrupts
-	while(1);
+	TIMSK1 = 0x20;		// Enable input capture interrupt
+	DDRB = 0x20;		// Allow PB5 (PIN 13) to be an output pin on the Arduino
+	uart_init();		// Initialize serial communication
+	TCCR1B = 0x04;		// Select timer 1 with a prescaler of 256
+				// Begin input capture on falling edge
+	TIFR1 |= 0x20;		// Clear input capture flag at ICF1 bit in TIFR1
+	sei();			// Enable interrupts globally
+	while(1);		// Run program forever
 }
 
-void clearBuffer() {	//code to reset buffer holding dots and dashes
+// Helper function to reset buffer holding dots and dashes
+void clearBuffer() {	
 	int i;
 	for (i = 0; i < 5; i++) {
 		buffer[i] = 0;
@@ -78,216 +79,217 @@ void clearBuffer() {	//code to reset buffer holding dots and dashes
 	b_index = 0;
 }
 
-char decode() {			//decodes the buffer holding sequences of dots, dashes, and spaces based on Morse code tree
+// Helper function to decode the buffer holding sequences of dots, dashes, & spaces based on Morse code tree
+char decode() {			
 	if (buffer[0] == '.') {
-		//e tree
+		// E tree
 		if (buffer[1] == '.') {
-			//i tree
+			// I tree
 			if (buffer[2] == '.') {
-				//s tree
+				// S tree
 				if (buffer[3] == '.') {
-					//h tree
+					// H tree
 					if (buffer[4] == '.') {
 						return('5');
 						} else if (buffer[4] == '-') {
-						return('4');
+							return('4');
 						} else {
-						return('H');
-					}
-					} else if (buffer[3] == '-') {
+							return('H');
+						}
+				} else if (buffer[3] == '-') {
 					if (buffer[4] == '.') {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else if (buffer[4] == '-') {
+					} else if (buffer[4] == '-') {
 						return('3');
-						} else {
+					} else {
 						return('V');
 					}
-					} else {
+				} else {
 					return('S');
 				}
-				} else if (buffer[2] == '-') {
-				//u tree
+			} else if (buffer[2] == '-') {
+				// U tree
 				if (buffer[3] == '.') {
-					//f tree
+					// F tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('F');
 					}
-					} else if (buffer[3] == '-') {
+				} else if (buffer[3] == '-') {
 					if (buffer[4] == '.') {
-						//do nothing
+						// Do nothing
 						return('\0');
 					}
 					else if (buffer[4] == '-') {
 						return('2');
 					}
 					else {
-						//do nothing b/c (..--) is not a valid char sequence
+						// Do nothing b/c (..--) is not a valid char sequence
 						return('\0');
 					}
-					} else {
+				} else {
 					return('U');
 				}
-				} else {
+			} else {
 				return('I');
 			}
-			} else if (buffer[1] == '-') {
-			//a tree
+		} else if (buffer[1] == '-') {
+			// A tree
 			if (buffer[2] == '.') {
-				//r tree
+				// R tree
 				if (buffer[3] == '.') {
-					//l tree
+					// L tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('L');
 					}
-					} else if (buffer[3] == '-') {
-					//do nothing b/c (.-.-) is not a valid char sequence
-						return('\0');
-					} else {
+				} else if (buffer[3] == '-') {
+					// Do nothing b/c (.-.-) is not a valid char sequence
+					return('\0');
+				} else {
 					return('R');
 				}
-				} else if (buffer[2] == '-') {
-				//w tree
+			} else if (buffer[2] == '-') {
+				// W tree
 				if (buffer[3] == '.') {
-					//p tree
+					// P tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('P');
 					}
-					} else if (buffer[3] == '-') {
-					//j tree
+				} else if (buffer[3] == '-') {
+					// J tree
 					if (buffer[4] == '.') {
-						//do nothing b/c (.---.) is not a valid char sequence
+						// Do nothing b/c (.---.) is not a valid char sequence
 						return('\0');
-						} else if (buffer[4] == '-') {
+					} else if (buffer[4] == '-') {
 						return('1');
-						} else {
+					} else {
 						return('J');
 					}
-					} else {
+				} else {
 					return('W');
 				}
-				} else {
+			} else {
 				return('A');
 			}
-			} else {
+		} else {
 			return('E');
 		}
-		} else if (buffer[0] == '-') {
-		//t tree
+	} else if (buffer[0] == '-') {
+		// T tree
 		if (buffer[1] == '.') {
-			//n tree
+			// N tree
 			if (buffer[2] == '.') {
-				//d tree
+				// D tree
 				if (buffer[3] == '.') {
-					//b tree
+					// B tree
 					if (buffer[4] == '.') {
 						return('6');
-						} else if (buffer[4] == '-') {
-						//do nothing b/c (-...-) is not a valid char sequence
+					} else if (buffer[4] == '-') {
+						// Do nothing b/c (-...-) is not a valid char sequence
 						return('\0');
-						} else {
+					} else {
 						return('B');
 					}
-					} else if (buffer[3] == '-') {
-					//x tree
+				} else if (buffer[3] == '-') {
+					// X tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('X');
 					}
-					} else {
+				} else {
 					return('D');
 				}
-				} else if (buffer[2] == '-') {
-				//k tree
+			} else if (buffer[2] == '-') {
+				// K tree
 				if (buffer[3] == '.') {
-					//c tree
+					// C tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('C');
 					}
-					} else if (buffer[3] == '-') {
-					//y tree
+				} else if (buffer[3] == '-') {
+					// Y tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('Y');
 					}
-					} else {
+				} else {
 					return('K');
 				}
-				} else {
+			} else {
 				return('N');
 			}
-			} else if (buffer[1] == '-') {
-			//m tree
+		} else if (buffer[1] == '-') {
+			// M tree
 			if (buffer[2] == '.') {
-				//g tree
+				// G tree
 				if (buffer[3] == '.') {
-					//z tree
+					// Z tree
 					if (buffer[4] == '.') {
 						return('7');
-						} else if (buffer[4] == '-') {
-						//do nothing b/c (--..-) is not a valid char sequence
+					} else if (buffer[4] == '-') {
+						// Do nothing b/c (--..-) is not a valid char sequence
 						return('\0');
-						} else {
+					} else {
 						return('Z');
 					}
-					} else if (buffer[3] == '-') {
+				} else if (buffer[3] == '-') {
 					//q tree
 					if ((buffer[4] == '.') || (buffer[4] == '-')) {
-						//do nothing
+						// Do nothing
 						return('\0');
-						} else {
+					} else {
 						return('Q');
 					}
-					} else {
+				} else {
 					return('G');
 				}
-				} else if (buffer[2] == '-') {
-				//o tree
+			} else if (buffer[2] == '-') {
+				// O tree
 				if (buffer[3] == '.') {
-					//8 tree
+					// 8 tree
 					if (buffer[4] == '.') {
 						return('8');
-						} else if (buffer[4] == '-') {
-							//do nothing b/c (---.-) is not a valid char sequence
-							return('\0');
-						} else {
-							//do nothing b/c (---.) is not a valid char sequence
-							return('\0');
+					} else if (buffer[4] == '-') {
+						// Do nothing b/c (---.-) is not a valid char sequence
+						return('\0');
+					} else {
+						// Do nothing b/c (---.) is not a valid char sequence
+						return('\0');
 					}
 				}
 				else if (buffer[3] == '-') {
-					//9,0 tree
+					// 9 & 0 trees
 					if (buffer[4] == '.') {
 						return('9');
-						} else if (buffer[4] == '-') {
+					} else if (buffer[4] == '-') {
 						return('0');
-						} else {
-							//do nothing b/c (----) is not a valid char sequence
-							return('\0');
-					}
 					} else {
+						// Do nothing b/c (----) is not a valid char sequence
+						return('\0');
+					}
+				} else {
 					return('O');
 				}
-				} else {
+			} else {
 				return('M');
 			}
-			} else {
+		} else {
 			return('T');
 		}
 	}
