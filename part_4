@@ -16,7 +16,6 @@ ISR(TIMER1_CAPT_vect) {
 	//count time, store in variable
 	//casework on time
 	if (!(PINB & 0x01)) {
-		//putchar('f');		//for debugging
 		edge1 = ICR1;		//store time of first (falling) edge
 		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
 		space_counter = ICR1 - space_counter;
@@ -28,13 +27,11 @@ ISR(TIMER1_CAPT_vect) {
 		}
 	} 
 	if (PINB & 0x01) {
-		//putchar('r');		//for debugging
 		edge2 = ICR1;		//store time of second (rising) edge
 		diff = edge2-edge1;	//for morse logic
 		if (diff < 1875) {	//ignore a rising edge that is less than 30 ms after a falling edge to for de-bouncing
 		} else if (diff < 12500) { //between 30 and 200 ms is a dot
 			//dot
-			//putchar('.');
 			buffer[b_index] = '.';		// case of index > 4
 			b_index++;					
 			if (b_index > 4) {
@@ -44,9 +41,8 @@ ISR(TIMER1_CAPT_vect) {
 			PORTB = 0x10;				//turn on pin 12 LED
 			_delay_ms(50);
 			PORTB &= ~(0x10);			//turn off
-		} else {
+		} else {	//if pressed for more than 200 ms it is a dash
 			//dash
-			//putchar('-');
 			buffer[b_index] = '-';
 			b_index++;					// increment index
 			if (b_index > 4) {
