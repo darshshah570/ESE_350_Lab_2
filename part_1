@@ -6,7 +6,7 @@
 #include "util/delay.h"
 
 ISR(TIMER1_CAPT_vect) {
-	TCCR1B ^= 0x40; // Toggle the input capture flag at the ICF1 bit in TIFR1
+	TCCR1B ^= 0x40; // Toggle the input capture edge at the ICES1 bit in TCCR1B
 	PORTB ^= 0x20;	// Toggle the on-off state of the LED at PB5
 }
 
