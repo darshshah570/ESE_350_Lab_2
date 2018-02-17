@@ -20,7 +20,7 @@ ISR(TIMER1_CAPT_vect) {
 		TCCR1B |= 0x40;		// Flip ICES1 bit, next capture on rising edge
 		space_counter = ICR1 - space_counter;
 		if (space_counter > 25000) {	// > 400 ms
-			//space
+			// Space
 			putchar(' ');
 			putchar(decode());
 			clearBuffer();
@@ -28,7 +28,7 @@ ISR(TIMER1_CAPT_vect) {
 	} 
 	if (PINB & 0x01) {
 		edge2 = ICR1;		// Store time of second (rising) edge
-		diff = edge2 - edge1;	// For morse logic
+		diff = edge2 - edge1;	// For Morse logic
 		if (diff < 1875) {	// Ignore a rising edge <30 ms after a falling edge to prevent de-bouncing effects
 		} else if (diff < 12500) { // Between 30 and 200 ms is a dot
 			// Dot 
