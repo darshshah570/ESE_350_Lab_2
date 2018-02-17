@@ -5,55 +5,50 @@
 #include "uart.h"
 #include "util/delay.h"
 
-
-volatile unsigned int edge1, edge2, diff, space_counter;
-
+volatile unsigned int edge1, edge2, diff, space_counter; // Initialize all relevant variables
 
 ISR(TIMER1_CAPT_vect) {
-	//count time, store in variable
-	//casework on time
-	if (!(PINB & 0x01)) {
-		//putchar('f');		//for debugging
-		edge1 = ICR1;		//store time of first (falling) edge
-		TCCR1B |= 0x40;		//flips ICES1 bit, next capture on rising bit
-		space_counter = ICR1 - space_counter;
+	// Falling edge logic, given that PB0 has a value of 0
+	if !(PINB & 0x01) {
+		edge1 = ICR1;				// Store timestamp of the first (falling) edge
+		TCCR1B |= 0x40;				// Flip ICES1 bit, next capture will be on rising edge
+		space_counter = ICR1 - space_counter;   // Determine if enough time has elapsed to qualify for a space
 		if (space_counter > 25000) {
-			//space
+			// Write space to serial monitor 
 			putchar(' ');
 		}
 	} 
+	// Rising edge logic, given that PB0 has a value of 1
 	if (PINB & 0x01) {
-		//putchar('r');		//for debugging
-		edge2 = ICR1;		//store time of second (rising) edge
-		diff = edge2-edge1;	//for morse logic
+		edge2 = ICR1;		// Store timestamp of the second (rising) edge
+		diff = edge2 - edge1;	// Determine the difference in time b/t falling and rising edges
 		if (diff < 1875) {
+			// Do nothing
 		} else if (diff < 12500) {
-			//dot
-			putchar('.');
-			PORTB = 0x10;
-			_delay_ms(50);
-			PORTB &= ~(0x10);
-		} else {
-			//dash
-			putchar('-');
-			PORTB = 0x08;
-			_delay_ms(50);
-			PORTB &= ~(0x08);
+			putchar('.');		// Write dot to serial monitor 
+			PORTB = 0x10;		// Flash the decimal dot LED
+			_delay_ms(50);		// Delay briefly to see LED flash
+			PORTB &= ~(0x10);	// Turn off LED until next dot
+		} else {	
+			putchar('-');		// Write dash to serial monitor 
+			PORTB = 0x08;		// Flash the horizontal dash LED
+			_delay_ms(50);		// Delay briefly to see LED flash
+			PORTB &= ~(0x08);	// Turn off LED until next dash
 		}
-		space_counter = ICR1;
-		TCCR1B &= ~(0x40);		//flips ICES1 bit, next capture on falling bit
+		space_counter = ICR1;	// Reset space_counter
+		TCCR1B &= ~(0x40);	// Flip ICES1 bit, next capture will be on falling edge
 	}
 }
 
 
 int main (void)
 {
-	TIMSK1 = 0x20;		//enable interrupt on input capture
-	DDRB = 0x18;		//write enable pin 13
-	uart_init();
-	TCCR1B = 0x04;		//timer 1, prescaler of 256
-						//input capture on falling edge
-	TIFR1 |= 0x20;		//clear input capture flag
-	sei();				//enable interrupts
-	while(1);
+	TIMSK1 = 0x20;		// Enable input capture interrupt
+	DDRB = 0x20;		// Allow PB5 (PIN 13) to be an output pin on the Arduino
+	uart_init();		// Initialize serial communication
+	TCCR1B = 0x04;		// Select timer 1 with a prescaler of 256
+				// Begin input capture on falling edge
+	TIFR1 |= 0x20;		// Clear input capture flag at ICF1 bit in TIFR1
+	sei();			// Enable interrupts globally
+	while(1);		// Run program forever
 }
