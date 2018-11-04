@@ -5,15 +5,22 @@
 #include "uart.h"
 #include "util/delay.h"
 
-volatile unsigned int rising_edge, edge1, period; // Initialize all relevant variables
+// Initialize all relevant variables
+volatile unsigned int rising_edge, edge1, diff; 
+volatile double period, bpm;
 
 ISR(TIMER1_CAPT_vect) {
 	// Rising edge logic, given that PB0 has a value of 1
 	if (PINB & 0x01) {
-		rising_edge += 1;				// Boolean value for rising edge
-		if (rising_edge == 1) { edge1 = ICR1; } 	// First rising edge
-		else { period = ICR1 - edge1; } 		// Units are obscure...period?
-		if (rising_edge == 2) { rising_edge = 0; }	// Reset rising edge counter 
+		rising_edge += 1;					// Boolean value for rising edge
+		if (rising_edge == 1) { 
+			edge1 = ICR1; 					// First rising edge
+		} else { 
+			diff = ICR1 - edge1; 				// Determine the "period" in timer counts
+			period = (diff+1)*(1/(16.0*pow(10.0,6)/1024));	// Determine the period in seconds
+			bpm = 60/period;				// Infer the number of beats per minute 
+		} 
+		if (rising_edge == 2) { rising_edge = 0; }		// Reset rising edge counter 
 	}
 }
 
