@@ -1,0 +1,2 @@
+1) Floating-Point Number Conversion: https://startingelectronics.org/articles/atmel-AVR-8-bit/print-float-atmel-studio-7/ 
+2) Use printf("bpm = %2.2f\n",50.00) in lieu of putchar() every time!
