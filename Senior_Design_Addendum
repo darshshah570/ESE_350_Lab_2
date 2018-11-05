@@ -1,34 +1,44 @@
 #include <asf.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "uart.h"
 #include "util/delay.h"
 
 // Initialize all relevant variables
-volatile unsigned int rising_edge, edge1, diff; 
+volatile unsigned int pre_scaler, rising_edge, edge1, diff; 
 volatile double period, bpm;
 
 ISR(TIMER1_CAPT_vect) {
 	// Rising edge logic, given that PB0 has a value of 1
 	if (PINB & 0x01) {
-		rising_edge += 1;					 // Rising edge counter
-		if ((rising_edge % 2) == 1) { 
-			edge1 = ICR1; 					 // First rising edge
-		} else { 
-			diff = ICR1 - edge1; 				 // Determine the "period" in timer counts
-			period = (diff+1)*(1/(16.0*pow(10.0,6)/1024.0)); // Determine the period in seconds
-			bpm = 60.0/period;				 // Infer the number of beats per minute 
-		} 
+		rising_edge += 1;
+		if ((rising_edge % 2) == 1) {
+			edge1 = ICR1; 						// First rising edge in wave period
+		} else if (ICR1 < edge1) {
+			diff = (pre_scaler + ICR1) - edge1;			// Determine the "period" in timer counts
+			period = (diff+1)*(1/(16.0*pow(10.0,6)/1024.0));	// Determine the period in seconds
+			bpm = 60.0/period;					// Infer the number of beats per minute
+		} else {
+			diff = ICR1 - edge1;					// Determine the "period" in timer counts
+			period = (diff+1)*(1/(16.0*pow(10.0,6)/1024.0));	// Determine the period in seconds
+			bpm = 60.0/period;					// Infer the number of beats per minute			
+		}
 	}
 }
 
 int main (void)
 {
 	uart_init();		// Initialize serial communication
-	sei();			// Enable interrupts globally
+	sei();				// Enable interrupts globally
 	TIMSK1 = 0x20;		// Enable input capture interrupt
-	TCCR1B = 0x45;		// Select timer 1 with a prescaler of 1024, begin input capture on rising edge
+	TCCR1B = 0x45;		// Select timer 1 with a pre-scaler of 1024, begin input capture on rising edge
 	TIFR1 |= 0x20;		// Clear input capture flag at ICF1 bit in TIFR1, safety precaution
-	while(1);		// Run program forever
+	pre_scaler = 1024;
+	while(1) {
+		float val = 50.00;
+		printf("bpm = %2.2f\n",val);
+	};			
 }
