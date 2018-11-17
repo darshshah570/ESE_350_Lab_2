@@ -1,8 +1,8 @@
-#define SERIAL_PLOTTER  2
+#define SERIAL_PLOTTER 2
 //  Variables
 int pulsePin = 0;                 // Pulse Sensor purple wire connected to analog pin 0
-int blinkPin = 13;                // pin to blink led at each beat
-int fadePin = 5;                  // pin to do fancy classy fading blink at each beat
+int greenPin = 13;                // pin to blink led at each beat
+int redPin = 12;                  // pin to do fancy classy fading blink at each beat
 int fadeRate = 0;                 // used to fade LED on with PWM on fadePin
 // Volatile Variables, used in the interrupt service routine!
 volatile int BPM;                   // int that holds raw Analog in 0. updated every 2mS
@@ -14,8 +14,8 @@ volatile boolean QS = false;        // becomes true when Arduoino finds a beat.
 static int outputType = SERIAL_PLOTTER;
 
 void setup(){
-  pinMode(blinkPin,OUTPUT);         // pin that will blink to your heartbeat!
-  pinMode(fadePin,OUTPUT);          // pin that will fade to your heartbeat!
+  pinMode(redPin,OUTPUT);         
+  pinMode(greenPin,OUTPUT);          
   Serial.begin(115200);             // we agree to talk fast!
   interruptSetup();                 // sets up to read Pulse Sensor signal every 2mS
 }
@@ -31,8 +31,8 @@ void loop(){
 }
 void serialOutput(){   
   if (outputType == SERIAL_PLOTTER) {
-    Serial.print(Signal);
-    Serial.print(",");
-    Serial.print(BPM);
+//    Serial.print(Signal);
+//    Serial.print(",");
+//    Serial.println(BPM);
   }
 }
