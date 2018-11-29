@@ -1,0 +1,26 @@
+const int xPin = 0;
+const int yPin = 1;
+const int zPin = 2;
+int xVal, yVal, zVal;
+void setup() {
+ pinMode(xPin,INPUT);
+ pinMode(yPin,INPUT);
+ pinMode(zPin,INPUT);
+ Serial.begin(115200);
+}
+
+void loop() {
+//  xVal = analogRead(xPin);
+//  yVal = analogRead(yPin);
+  zVal = analogRead(zPin);
+  serialOutput();
+  delay(40);
+}
+
+void serialOutput() {
+//  Serial.print(xVal);
+//  Serial.print(",");
+//  Serial.print(yVal);
+//  Serial.print(",");
+  Serial.println(zVal);
+}
