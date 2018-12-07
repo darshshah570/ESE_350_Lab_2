@@ -1,0 +1,67 @@
+#include "HeartSpeed.h"
+int i, bpm, index, initParity;
+int minVal, maxVal, thresh;
+bool parity, oddCross = false;
+const int arrSize = 10;
+int heartRates[arrSize];
+unsigned long initTime, finalTime;
+float period, freq; 
+HeartSpeed heartspeed(A1);
+
+void mycb(uint8_t rawData, int value) {
+    // Display BPM
+    if (index == arrSize) { index = 0; }
+      heartRates[index] = value;
+    if (heartRates[arrSize-1] != 0) {
+      bpm = 0;
+      for (i = 0; i < arrSize; i++) {
+        bpm += heartRates[i];
+      }
+      bpm /= arrSize;
+      if (initParity == 0) {
+        minVal = bpm; 
+        maxVal = bpm;
+        thresh = (minVal + maxVal)/2;
+      }
+      threshCalc(bpm);
+      if (initParity == 0) { 
+        parity = (bpm < thresh);
+        initParity++;
+      }
+      periodCalc(parity);
+    }
+    index++;
+}
+
+void threshCalc(int bpm) {
+    if (bpm < minVal) { minVal = bpm; }
+    if (bpm > maxVal) { maxVal = bpm; }
+    thresh = (minVal + maxVal)/2;
+}
+
+void periodCalc(bool parity) {
+    if (parity != (bpm < thresh)) {
+        oddCross = !oddCross;
+        parity = !parity;
+        if (oddCross) {
+            period = (millis() - initTime)/1000.0;
+            freq = 1.0/period;
+            initTime = millis();
+        }
+    }
+}
+
+void setup() {
+    Serial.begin(9600);
+    heartspeed.begin();
+    initTime = millis();
+}
+
+void loop() {
+    heartspeed.setCB(mycb);
+    Serial.print("BPM = ");
+    Serial.print(bpm);
+    Serial.print(", ");
+    Serial.print("Frequency = ");
+    Serial.println(freq,5);
+}
